@@ -157,6 +157,14 @@
     data[i * 4 + 2] = Math.sin(th) * r * R;
     data[i * 4 + 3] = Math.random();
   }
+  // shuffle draw order so any prefix is a uniform sample of the volume —
+  // small screens then draw fewer particles at the same per-pixel density
+  for (let i = N - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    for (let k = 0; k < 4; k++) {
+      const tmp = data[i * 4 + k]; data[i * 4 + k] = data[j * 4 + k]; data[j * 4 + k] = tmp;
+    }
+  }
   const buf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buf);
   gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
@@ -174,6 +182,7 @@
   gl.clearColor(0, 0, 0, 0);
 
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let drawN = N;
   const resize = () => {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     canvas.width = w * dpr; canvas.height = h * dpr;
@@ -183,6 +192,8 @@
     // overlap stays a readable seam instead of a congested blob
     gl.uniform1f(uSep, w < 480 ? 0.335 : 0.27);
     gl.uniform1f(uPt, Math.min(1, w / 520));
+    // constant per-pixel density: particle count follows canvas area
+    drawN = Math.round(N * Math.min(1, (w / 520) * (w / 520)));
   };
   resize();
   addEventListener('resize', resize, { passive: true });
@@ -214,8 +225,8 @@
     // reduced-motion: slow drift instead of full freeze
     gl.uniform1f(uTime, reduced ? t * 0.15 : t);
     gl.uniform1f(uTiltY, cx); gl.uniform1f(uTiltX, cy);
-    gl.uniform1f(uSide, -1); gl.drawArrays(gl.POINTS, 0, N);
-    gl.uniform1f(uSide, 1); gl.drawArrays(gl.POINTS, 0, N);
+    gl.uniform1f(uSide, -1); gl.drawArrays(gl.POINTS, 0, drawN);
+    gl.uniform1f(uSide, 1); gl.drawArrays(gl.POINTS, 0, drawN);
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
