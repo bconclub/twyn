@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="talk"
+        android:enabled="true"
+        android:icon="@drawable/ic_mic"
+        android:shortcutShortLabel="@string/shortcut_talk">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="twin://chat?voice=1"
+            android:targetPackage="com.twin.app"
+            android:targetClass="com.twin.app.ChatActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="type"
+        android:enabled="true"
+        android:icon="@drawable/ic_twin"
+        android:shortcutShortLabel="@string/shortcut_type">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="twin://chat"
+            android:targetPackage="com.twin.app"
+            android:targetClass="com.twin.app.ChatActivity" />
+    </shortcut>
+</shortcuts>

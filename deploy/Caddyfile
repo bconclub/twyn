@@ -1,0 +1,5 @@
+{$TWIN_DOMAIN}
+
+reverse_proxy twin:8000 {
+    flush_interval -1
+}

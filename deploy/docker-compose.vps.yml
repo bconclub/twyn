@@ -1,0 +1,17 @@
+# VPS variant: host nginx already owns 80/443, so no Caddy.
+# Twin binds to localhost only; nginx reverse-proxies twin.bconclub.com to it.
+services:
+  twin:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: twin
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - twin-data:/srv/twin/data
+    ports:
+      - "127.0.0.1:8801:8000"
+
+volumes:
+  twin-data:

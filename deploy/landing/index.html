@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TWYN — Not an assistant. A twin.</title>
+<meta name="description" content="TWYN is your digital twin. You remember. It helps you see what matters. Download for Android.">
+<meta property="og:title" content="TWYN">
+<meta property="og:description" content="You remember. I help you see what matters.">
+<style>
+  :root {
+    --bg:#000; --text:#f4f4f5; --muted:#a3a3ad;
+    --accent:#8b7cff; --accent-press:#6f5ef0; --on-accent:#fff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+  body {
+    background:var(--bg); color:var(--text);
+    font-family:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  main {
+    height:100svh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    padding:24px; gap:0;
+  }
+  #twin { width:min(520px, 92vw); aspect-ratio:8/5; display:block; }
+  .wordmark {
+    font-size:clamp(36px, 8vw, 64px); font-weight:500;
+    letter-spacing:.45em; text-indent:.45em; margin-top:-14px;
+  }
+  .line1 {
+    font-size:clamp(12px, 2.2vw, 15px); font-weight:600;
+    letter-spacing:.32em; text-indent:.32em; margin-top:22px;
+  }
+  .line2 {
+    font-family:ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    color:var(--muted); font-size:clamp(12px, 2vw, 14px);
+    letter-spacing:.08em; margin:10px 0 40px;
+  }
+  .btn {
+    display:inline-flex; align-items:center; gap:10px; min-height:56px;
+    background:var(--accent); color:var(--on-accent); text-decoration:none;
+    font-size:17px; font-weight:600; padding:0 34px; border-radius:999px;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .btn:hover { background:var(--accent-press); transform:translateY(-1px); }
+  .btn:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+  .btn svg { width:20px; height:20px; }
+  .meta { color:var(--muted); font-size:13px; margin-top:14px; }
+  @media (prefers-reduced-motion: reduce) {
+    .btn { transition:none; }
+    .btn:hover { transform:none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="twin" aria-label="TWYN particle mark" role="img"></canvas>
+  <div class="wordmark">TWYN</div>
+  <div class="line1">NOT AN ASSISTANT. A TWIN.</div>
+  <p class="line2">Your memory. Your voice. Your judgment.</p>
+  <a class="btn" href="/apk/TWYN-latest.apk" download>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Download for Android
+  </a>
+  <div class="meta">v0.0.2 · Android 8.0+ · direct APK</div>
+</main>
+
+<script>
+(() => {
+  const canvas = document.getElementById('twin');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const gl = canvas.getContext('webgl', { alpha: true, antialias: false, powerPreference: 'high-performance' });
+  const fallback = () => { canvas.outerHTML = '<img id="twin" src="/twyn-mark.svg" alt="TWYN mark" style="width:min(520px,92vw)">'; };
+  if (!gl) return fallback();
+
+  const VS = `
+  attribute vec3 aPos; attribute float aRnd;
+  uniform float uTime, uAspect, uSide, uTiltX, uTiltY, uPulse;
+  varying float vB;
+  void main() {
+    float t = uTime * (0.38 + 0.14 * uSide);
+    float cy = cos(t + uTiltY), sy = sin(t + uTiltY);
+    float cx = cos(uTiltX), sx = sin(uTiltX);
+    vec3 p = aPos;
+    p = vec3(p.x * cy + p.z * sy, p.y, -p.x * sy + p.z * cy);
+    p = vec3(p.x, p.y * cx - p.z * sx, p.y * sx + p.z * cx);
+    // per-particle shimmer drift: cloud feels alive even between rotations
+    float ph = aRnd * 43.0;
+    p += 0.014 * vec3(sin(uTime * 1.7 + ph), cos(uTime * 1.3 + ph * 1.3), sin(uTime * 2.1 + ph * 0.7));
+    // twin interaction: slow approach/retreat breathing + tap pulse apart
+    p.x += uSide * (0.27 + 0.035 * sin(uTime * 0.45) + 0.14 * uPulse);
+    p *= 1.0 + 0.02 * sin(uTime * 0.8 + uSide);
+    float persp = 1.6 / (1.6 + p.z);
+    gl_Position = vec4(p.x * persp / uAspect, p.y * persp, 0.0, 1.0);
+    gl_PointSize = (1.4 + 2.2 * aRnd) * persp * ${Math.min(window.devicePixelRatio || 1, 2).toFixed(1)};
+    // rim emphasis: particles near the sphere surface glow, so each circle keeps
+    // a readable edge inside the overlap instead of merging into one blob
+    float rf = length(aPos) / 0.42;
+    vB = (0.35 + 0.65 * aRnd) * (0.55 + 0.45 * persp);
+    vB *= 0.45 + 0.75 * smoothstep(0.55, 0.98, rf);
+    vB *= (uSide > 0.0) ? 0.82 : 1.0;  // twins, not mirrors: right sphere a touch dimmer
+    vB *= 0.72 + 0.28 * sin(uTime * (1.6 + aRnd * 2.6) + ph);  // twinkle
+  }`;
+  const FS = `
+  precision mediump float; varying float vB;
+  void main() {
+    vec2 d = gl_PointCoord - 0.5;
+    float r2 = dot(d, d);
+    if (r2 > 0.25) discard;
+    float a = vB * smoothstep(0.25, 0.02, r2);
+    gl_FragColor = vec4(vec3(a), a);
+  }`;
+
+  const sh = (type, src) => {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(s);
+    return s;
+  };
+  let prog;
+  try {
+    prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw 0;
+  } catch (e) { return fallback(); }
+  gl.useProgram(prog);
+
+  // Fibonacci directions, volume-filled with rim bias: dense globes, glowing edge
+  const N = 2800, data = new Float32Array(N * 4);
+  const GA = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < N; i++) {
+    const y = 1 - (i / (N - 1)) * 2;
+    const r = Math.sqrt(1 - y * y);
+    const th = GA * i;
+    const jitter = Math.pow(Math.random(), 0.28);
+    const R = 0.42 * (0.35 + 0.65 * jitter);
+    data[i * 4] = Math.cos(th) * r * R;
+    data[i * 4 + 1] = y * R;
+    data[i * 4 + 2] = Math.sin(th) * r * R;
+    data[i * 4 + 3] = Math.random();
+  }
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+  const aPos = gl.getAttribLocation(prog, 'aPos'), aRnd = gl.getAttribLocation(prog, 'aRnd');
+  gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 16, 0);
+  gl.enableVertexAttribArray(aRnd); gl.vertexAttribPointer(aRnd, 1, gl.FLOAT, false, 16, 12);
+
+  const U = n => gl.getUniformLocation(prog, n);
+  const uTime = U('uTime'), uAspect = U('uAspect'), uSide = U('uSide'),
+        uTiltX = U('uTiltX'), uTiltY = U('uTiltY'), uPulse = U('uPulse');
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE);
+  gl.clearColor(0, 0, 0, 0);
+
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const resize = () => {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.uniform1f(uAspect, w / h);
+  };
+  resize();
+  addEventListener('resize', resize, { passive: true });
+
+  let tx = 0, ty = 0, cx = 0, cy = 0;
+  addEventListener('pointermove', e => {
+    tx = (e.clientX / innerWidth - 0.5) * 0.5;
+    ty = (e.clientY / innerHeight - 0.5) * 0.35;
+  }, { passive: true });
+  let pulse = 0;
+  addEventListener('pointerdown', () => { pulse = 1; }, { passive: true });
+  // mobile: tilt parallax from gyro (no permission needed on Android)
+  addEventListener('deviceorientation', e => {
+    if (e.gamma == null) return;
+    tx = Math.max(-0.5, Math.min(0.5, e.gamma / 90));
+    ty = Math.max(-0.35, Math.min(0.35, (e.beta - 45) / 120));
+  }, { passive: true });
+
+  let running = true;
+  document.addEventListener('visibilitychange', () => { running = !document.hidden; if (running) requestAnimationFrame(frame); });
+
+  const frame = (ms) => {
+    if (!running) return;
+    const t = ms / 1000;
+    cx += (tx - cx) * 0.06; cy += (ty - cy) * 0.06;
+    pulse *= 0.955;
+    gl.uniform1f(uPulse, pulse);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    // reduced-motion: slow drift instead of full freeze
+    gl.uniform1f(uTime, reduced ? t * 0.15 : t);
+    gl.uniform1f(uTiltY, cx); gl.uniform1f(uTiltX, cy);
+    gl.uniform1f(uSide, -1); gl.drawArrays(gl.POINTS, 0, N);
+    gl.uniform1f(uSide, 1); gl.drawArrays(gl.POINTS, 0, N);
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
