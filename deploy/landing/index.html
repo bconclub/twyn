@@ -7,16 +7,19 @@
 <meta name="description" content="TWYN is your digital twin. You remember. It helps you see what matters. Download for Android.">
 <meta property="og:title" content="TWYN">
 <meta property="og:description" content="You remember. I help you see what matters.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:#000; --text:#f4f4f5; --muted:#a3a3ad;
-    --accent:#8b7cff; --accent-press:#6f5ef0; --on-accent:#fff;
+    --accent:#f4f4f5; --accent-press:#d4d4d8; --on-accent:#000;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { height:100%; overflow:hidden; }
   body {
     background:var(--bg); color:var(--text);
-    font-family:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family:"Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing:antialiased;
   }
   main {
@@ -30,11 +33,12 @@
     letter-spacing:.45em; text-indent:.45em; margin-top:-14px;
   }
   .line1 {
-    font-size:clamp(12px, 2.2vw, 15px); font-weight:600;
+    font-size:clamp(12px, 2.2vw, 15px); font-weight:400;
     letter-spacing:.32em; text-indent:.32em; margin-top:22px;
   }
+  .line1 b { font-weight:700; }
   .line2 {
-    font-family:ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-family:"Space Mono", ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
     color:var(--muted); font-size:clamp(12px, 2vw, 14px);
     letter-spacing:.08em; margin:10px 0 40px;
   }
@@ -45,9 +49,12 @@
     transition:background .15s ease, transform .15s ease;
   }
   .btn:hover { background:var(--accent-press); transform:translateY(-1px); }
-  .btn:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+  .btn:focus-visible { outline:3px solid var(--text); outline-offset:3px; }
   .btn svg { width:20px; height:20px; }
-  .meta { color:var(--muted); font-size:13px; margin-top:14px; }
+  .meta {
+    font-family:"Space Mono", ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    color:var(--muted); font-size:13px; margin-top:14px;
+  }
   @media (prefers-reduced-motion: reduce) {
     .btn { transition:none; }
     .btn:hover { transform:none; }
@@ -58,7 +65,7 @@
 <main>
   <canvas id="twin" aria-label="TWYN particle mark" role="img"></canvas>
   <div class="wordmark">TWYN</div>
-  <div class="line1">NOT AN ASSISTANT. A TWIN.</div>
+  <div class="line1">NOT AN ASSISTANT. <b>A TWIN.</b></div>
   <p class="line2">Your memory. Your voice. Your judgment.</p>
   <a class="btn" href="/apk/TWYN-latest.apk" download>
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
