@@ -100,21 +100,21 @@
     p = vec3(p.x, p.y * cx - p.z * sx, p.y * sx + p.z * cx);
     // per-particle shimmer drift: cloud feels alive even between rotations
     float ph = aRnd * 43.0;
-    p += 0.014 * vec3(sin(uTime * 1.7 + ph), cos(uTime * 1.3 + ph * 1.3), sin(uTime * 2.1 + ph * 0.7));
+    p += 0.008 * vec3(sin(uTime * 1.7 + ph), cos(uTime * 1.3 + ph * 1.3), sin(uTime * 2.1 + ph * 0.7));
     // twin interaction: slow approach/retreat breathing + tap pulse apart
     p.x += uSide * (uSep + 0.035 * sin(uTime * 0.45) + 0.14 * uPulse);
     p *= 1.0 + 0.02 * sin(uTime * 0.8 + uSide);
     float persp = 1.6 / (1.6 + p.z);
     gl_Position = vec4(p.x * persp / uAspect, p.y * persp, 0.0, 1.0);
-    gl_PointSize = (1.4 + 2.2 * aRnd) * persp * (0.72 + 0.28 * uPt) * ${Math.min(window.devicePixelRatio || 1, 2).toFixed(1)};
+    gl_PointSize = (0.9 + 1.5 * aRnd) * persp * (0.72 + 0.28 * uPt) * ${Math.min(window.devicePixelRatio || 1, 2).toFixed(1)};
     // rim emphasis: particles near the sphere surface glow, so each circle keeps
     // a readable edge inside the overlap instead of merging into one blob
-    float rf = length(aPos) / 0.42;
+    float rf = length(aPos) / 0.5;
     vB = (0.35 + 0.65 * aRnd) * (0.55 + 0.45 * persp);
-    vB *= 0.45 + 0.75 * smoothstep(0.55, 0.98, rf);
+    vB *= 0.3 + 0.9 * smoothstep(0.6, 0.98, rf);
     vB *= (uSide > 0.0) ? 0.82 : 1.0;  // twins, not mirrors: right sphere a touch dimmer
     // merge zone: particles crossing the seam glow brightest — the overlap is where it happens
-    vB *= 1.0 + 0.55 * (1.0 - smoothstep(0.05, 0.34, abs(p.x)));
+    vB *= 1.0 + 0.8 * (1.0 - smoothstep(0.06, 0.30, abs(p.x)));
     vB *= 0.72 + 0.28 * sin(uTime * (1.6 + aRnd * 2.6) + ph);  // twinkle
   }`;
   const FS = `
@@ -143,15 +143,17 @@
   } catch (e) { return fallback(); }
   gl.useProgram(prog);
 
-  // Fibonacci directions, volume-filled with rim bias: dense globes, glowing edge
-  const N = 2800, data = new Float32Array(N * 4);
+  // Fibonacci directions, shell-heavy: particles hug the surface so the globes
+  // read as hollow rims with a sparse inner haze — per the brand mark
+  const N = 4200, data = new Float32Array(N * 4);
   const GA = Math.PI * (3 - Math.sqrt(5));
   for (let i = 0; i < N; i++) {
     const y = 1 - (i / (N - 1)) * 2;
     const r = Math.sqrt(1 - y * y);
     const th = GA * i;
-    const jitter = Math.pow(Math.random(), 0.28);
-    const R = 0.42 * (0.35 + 0.65 * jitter);
+    const shell = Math.random() < 0.78;
+    const jitter = shell ? 0.94 + 0.06 * Math.random() : Math.pow(Math.random(), 0.5);
+    const R = 0.5 * jitter;
     data[i * 4] = Math.cos(th) * r * R;
     data[i * 4 + 1] = y * R;
     data[i * 4 + 2] = Math.sin(th) * r * R;
@@ -188,9 +190,8 @@
     canvas.width = w * dpr; canvas.height = h * dpr;
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.uniform1f(uAspect, w / h);
-    // narrow screens: spread the twins apart and shrink particles, so the
-    // overlap stays a readable seam instead of a congested blob
-    gl.uniform1f(uSep, w < 480 ? 0.335 : 0.27);
+    // canonical geometry at every size: big circles, wide glowing vesica
+    gl.uniform1f(uSep, 0.31);
     gl.uniform1f(uPt, Math.min(1, w / 520));
     // constant per-pixel density: particle count follows canvas area
     drawN = Math.round(N * Math.min(1, (w / 520) * (w / 520)));
