@@ -84,7 +84,7 @@
 
   const VS = `
   attribute vec3 aPos; attribute float aRnd;
-  uniform float uTime, uAspect, uSide, uTiltX, uTiltY, uPulse;
+  uniform float uTime, uAspect, uSide, uTiltX, uTiltY, uPulse, uSep, uPt;
   varying float vB;
   void main() {
     // counter-rotation: the twins spin in opposite directions at unequal speeds,
@@ -102,11 +102,11 @@
     float ph = aRnd * 43.0;
     p += 0.014 * vec3(sin(uTime * 1.7 + ph), cos(uTime * 1.3 + ph * 1.3), sin(uTime * 2.1 + ph * 0.7));
     // twin interaction: slow approach/retreat breathing + tap pulse apart
-    p.x += uSide * (0.27 + 0.035 * sin(uTime * 0.45) + 0.14 * uPulse);
+    p.x += uSide * (uSep + 0.035 * sin(uTime * 0.45) + 0.14 * uPulse);
     p *= 1.0 + 0.02 * sin(uTime * 0.8 + uSide);
     float persp = 1.6 / (1.6 + p.z);
     gl_Position = vec4(p.x * persp / uAspect, p.y * persp, 0.0, 1.0);
-    gl_PointSize = (1.4 + 2.2 * aRnd) * persp * ${Math.min(window.devicePixelRatio || 1, 2).toFixed(1)};
+    gl_PointSize = (1.4 + 2.2 * aRnd) * persp * (0.72 + 0.28 * uPt) * ${Math.min(window.devicePixelRatio || 1, 2).toFixed(1)};
     // rim emphasis: particles near the sphere surface glow, so each circle keeps
     // a readable edge inside the overlap instead of merging into one blob
     float rf = length(aPos) / 0.42;
@@ -114,7 +114,7 @@
     vB *= 0.45 + 0.75 * smoothstep(0.55, 0.98, rf);
     vB *= (uSide > 0.0) ? 0.82 : 1.0;  // twins, not mirrors: right sphere a touch dimmer
     // merge zone: particles crossing the seam glow brightest — the overlap is where it happens
-    vB *= 1.0 + 1.1 * (1.0 - smoothstep(0.02, 0.26, abs(p.x)));
+    vB *= 1.0 + 0.55 * (1.0 - smoothstep(0.05, 0.34, abs(p.x)));
     vB *= 0.72 + 0.28 * sin(uTime * (1.6 + aRnd * 2.6) + ph);  // twinkle
   }`;
   const FS = `
@@ -166,7 +166,8 @@
 
   const U = n => gl.getUniformLocation(prog, n);
   const uTime = U('uTime'), uAspect = U('uAspect'), uSide = U('uSide'),
-        uTiltX = U('uTiltX'), uTiltY = U('uTiltY'), uPulse = U('uPulse');
+        uTiltX = U('uTiltX'), uTiltY = U('uTiltY'), uPulse = U('uPulse'),
+        uSep = U('uSep'), uPt = U('uPt');
 
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE);
@@ -178,6 +179,10 @@
     canvas.width = w * dpr; canvas.height = h * dpr;
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.uniform1f(uAspect, w / h);
+    // narrow screens: spread the twins apart and shrink particles, so the
+    // overlap stays a readable seam instead of a congested blob
+    gl.uniform1f(uSep, w < 480 ? 0.335 : 0.27);
+    gl.uniform1f(uPt, Math.min(1, w / 520));
   };
   resize();
   addEventListener('resize', resize, { passive: true });
