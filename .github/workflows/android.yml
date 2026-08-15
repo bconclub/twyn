@@ -1,0 +1,32 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['app/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Build release APK
+        run: gradle assembleRelease
+        working-directory: app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TWYN-apk
+          path: app/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
