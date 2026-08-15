@@ -87,11 +87,16 @@
   uniform float uTime, uAspect, uSide, uTiltX, uTiltY, uPulse;
   varying float vB;
   void main() {
-    float t = uTime * (0.38 + 0.14 * uSide);
+    // counter-rotation: the twins spin in opposite directions at unequal speeds,
+    // so all apparent motion converges on the seam where they meet
+    float t = uSide * uTime * (0.44 + 0.10 * uSide);
     float cy = cos(t + uTiltY), sy = sin(t + uTiltY);
     float cx = cos(uTiltX), sx = sin(uTiltX);
     vec3 p = aPos;
     p = vec3(p.x * cy + p.z * sy, p.y, -p.x * sy + p.z * cy);
+    // cant each twin's spin axis toward the other: opposed axes, not mirrors
+    float ca = cos(uSide * 0.32), sa = sin(uSide * 0.32);
+    p = vec3(p.x * ca - p.y * sa, p.x * sa + p.y * ca, p.z);
     p = vec3(p.x, p.y * cx - p.z * sx, p.y * sx + p.z * cx);
     // per-particle shimmer drift: cloud feels alive even between rotations
     float ph = aRnd * 43.0;
@@ -108,6 +113,8 @@
     vB = (0.35 + 0.65 * aRnd) * (0.55 + 0.45 * persp);
     vB *= 0.45 + 0.75 * smoothstep(0.55, 0.98, rf);
     vB *= (uSide > 0.0) ? 0.82 : 1.0;  // twins, not mirrors: right sphere a touch dimmer
+    // merge zone: particles crossing the seam glow brightest — the overlap is where it happens
+    vB *= 1.0 + 1.1 * (1.0 - smoothstep(0.02, 0.26, abs(p.x)));
     vB *= 0.72 + 0.28 * sin(uTime * (1.6 + aRnd * 2.6) + ph);  // twinkle
   }`;
   const FS = `
