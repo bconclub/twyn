@@ -60,8 +60,12 @@ fun ChatScreen(
         )
     }
 
-    LaunchedEffect(Unit) {
-        if (startVoice && prefs.configured) startListening() else focus.requestFocus()
+    // key on showSettings: while the settings dialog is up the chat input (and its
+    // focusRequester) is not composed, so requesting focus then would crash
+    LaunchedEffect(showSettings) {
+        if (showSettings) return@LaunchedEffect
+        if (startVoice && prefs.configured) startListening()
+        else runCatching { focus.requestFocus() }
     }
     LaunchedEffect(messages.size, messages.lastOrNull()?.text?.length) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
