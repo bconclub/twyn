@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TWYN — Memory</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #000;
+    --panel: #111111;
+    --line: #222;
+    --text: #f4f4f5;
+    --muted: #8a8a93;
+    --accent: #8B7CFF;
+    --danger: #e5484d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); }
+  body {
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 14px 18px; border-bottom: 1px solid var(--line);
+  }
+  .word { letter-spacing: .35em; font-weight: 500; font-size: 14px; }
+  .sub { color: var(--muted); font-family: "Space Mono", ui-monospace, monospace; font-size: 12px; }
+  header .grow { flex: 1; }
+  input, textarea, button {
+    font: inherit; color: var(--text); background: var(--panel);
+    border: 1px solid var(--line); border-radius: 10px;
+  }
+  input[type="password"], input[type="text"] { padding: 8px 12px; min-width: 160px; }
+  button {
+    padding: 8px 14px; cursor: pointer; background: transparent;
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button.danger { color: var(--danger); border-color: #3a1a1c; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  main { display: grid; grid-template-columns: 260px 1fr; height: calc(100% - 61px); }
+  aside {
+    border-right: 1px solid var(--line); overflow: auto; padding: 10px;
+  }
+  .file {
+    display: block; width: 100%; text-align: left; padding: 10px 12px;
+    margin-bottom: 4px; background: transparent;
+  }
+  .file.active { background: #1a1730; border-color: var(--accent); }
+  .file .path { display: block; font-size: 14px; }
+  .file .meta { display: block; color: var(--muted); font-family: "Space Mono", ui-monospace, monospace; font-size: 11px; margin-top: 2px; }
+  .editor { display: flex; flex-direction: column; min-width: 0; }
+  .bar {
+    display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+    border-bottom: 1px solid var(--line); color: var(--muted);
+    font-family: "Space Mono", ui-monospace, monospace; font-size: 12px;
+  }
+  .bar .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  textarea {
+    flex: 1; width: 100%; resize: none; border: 0; border-radius: 0;
+    padding: 18px 20px; font-family: "Space Mono", ui-monospace, monospace;
+    font-size: 13.5px; line-height: 1.55; outline: none;
+  }
+  .status { color: var(--muted); font-size: 12px; }
+  .status.err { color: var(--danger); }
+  .empty { padding: 40px 24px; color: var(--muted); max-width: 36em; line-height: 1.5; }
+  @media (max-width: 720px) {
+    main { grid-template-columns: 1fr; grid-template-rows: 36% 1fr; }
+    aside { border-right: 0; border-bottom: 1px solid var(--line); }
+    input[type="password"] { min-width: 0; flex: 1; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="word">TWYN</div>
+  <div class="sub">memory · no cloud</div>
+  <div class="grow"></div>
+  <input id="token" type="password" placeholder="Token" autocomplete="off">
+  <button type="button" id="unlock">Open</button>
+  <button type="button" id="newfile">New</button>
+  <span id="status" class="status"></span>
+</header>
+<main>
+  <aside id="list"></aside>
+  <section class="editor">
+    <div class="bar">
+      <div id="current" class="grow">Select a file</div>
+      <button type="button" class="primary" id="save" disabled>Save</button>
+      <button type="button" class="danger" id="del" disabled>Delete</button>
+    </div>
+    <textarea id="body" spellcheck="false" disabled placeholder="Markdown memory. Edits here skip Claude entirely."></textarea>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const tokenEl = $("token");
+const statusEl = $("status");
+const listEl = $("list");
+const bodyEl = $("body");
+const currentEl = $("current");
+const saveBtn = $("save");
+const delBtn = $("del");
+
+let current = "";
+let dirty = false;
+
+tokenEl.value = sessionStorage.getItem("twin_token") || "";
+
+function setStatus(msg, err) {
+  statusEl.textContent = msg || "";
+  statusEl.className = "status" + (err ? " err" : "");
+}
+
+function headers() {
+  return { Authorization: "Bearer " + tokenEl.value.trim() };
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { ...opts, headers: { ...headers(), ...(opts.headers || {}) } });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(res.status === 401 ? "bad token" : (detail || res.statusText));
+  }
+  return res;
+}
+
+async function refresh() {
+  sessionStorage.setItem("twin_token", tokenEl.value.trim());
+  setStatus("loading…");
+  const files = await api("/memory").then((r) => r.json());
+  listEl.innerHTML = "";
+  if (!files.length) {
+    listEl.innerHTML = '<p class="empty">No markdown yet. New creates a file on disk.</p>';
+  }
+  for (const f of files) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "file" + (f.path === current ? " active" : "");
+    b.innerHTML = `<span class="path">${f.path}</span><span class="meta">${f.bytes} B</span>`;
+    b.addEventListener("click", () => openFile(f.path));
+    listEl.appendChild(b);
+  }
+  setStatus(files.length ? `${files.length} files` : "empty");
+}
+
+async function openFile(path) {
+  if (dirty && !confirm("Discard unsaved edits?")) return;
+  const text = await api("/memory/" + path).then((r) => r.text());
+  current = path;
+  bodyEl.value = text;
+  bodyEl.disabled = false;
+  currentEl.textContent = path;
+  saveBtn.disabled = false;
+  delBtn.disabled = false;
+  dirty = false;
+  await refresh();
+}
+
+bodyEl.addEventListener("input", () => { dirty = true; });
+
+$("unlock").addEventListener("click", () => refresh().catch((e) => setStatus(e.message, true)));
+tokenEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") $("unlock").click();
+});
+
+saveBtn.addEventListener("click", async () => {
+  if (!current) return;
+  try {
+    await api("/memory/" + current, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: bodyEl.value }),
+    });
+    dirty = false;
+    setStatus("saved");
+    await refresh();
+  } catch (e) {
+    setStatus(e.message, true);
+  }
+});
+
+delBtn.addEventListener("click", async () => {
+  if (!current || !confirm("Delete " + current + "?")) return;
+  try {
+    await api("/memory/" + current, { method: "DELETE" });
+    current = "";
+    bodyEl.value = "";
+    bodyEl.disabled = true;
+    currentEl.textContent = "Select a file";
+    saveBtn.disabled = true;
+    delBtn.disabled = true;
+    dirty = false;
+    setStatus("deleted");
+    await refresh();
+  } catch (e) {
+    setStatus(e.message, true);
+  }
+});
+
+$("newfile").addEventListener("click", async () => {
+  const raw = prompt("New markdown path", "projects/note.md");
+  if (!raw) return;
+  let path = raw.trim().replace(/^\/+/, "");
+  if (!path.endsWith(".md")) path += ".md";
+  try {
+    await api("/memory/" + path, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: "# " + path.replace(/\.md$/, "") + "\n\n" }),
+    });
+    dirty = false;
+    await openFile(path);
+  } catch (e) {
+    setStatus(e.message, true);
+  }
+});
+
+if (tokenEl.value) refresh().catch((e) => setStatus(e.message, true));
+</script>
+</body>
+</html>

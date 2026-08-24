@@ -9,6 +9,7 @@
 - [x] Deployed on VPS, HTTPS (twin.bconclub.com)
 - [x] Android app: chat + voice, APK built (sideload pending)
 - [x] Widget + quick tile built (verify on device)
+- [x] Local memory editor (app + `/edit`) — no Claude required
 - [ ] Founder 7-day daily-use streak
 
 ## Phase 1 — Exocortex (M3-6)

@@ -22,4 +22,4 @@ build-backend = "setuptools.build_meta"
 include = ["twin_server*"]
 
 [tool.setuptools.package-data]
-twin_server = ["prompts/*.md"]
+twin_server = ["prompts/*.md", "static/*"]

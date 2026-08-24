@@ -48,6 +48,16 @@ def test_project_note(tmp_path, monkeypatch):
     assert "v0 scaffolded" in content
 
 
+def test_list_and_delete(tmp_path, monkeypatch):
+    store = setup_env(tmp_path, monkeypatch)
+    store.write("inbox.md", "# Inbox\n- note\n")
+    paths = {f["path"] for f in store.list_files()}
+    assert "inbox.md" in paths
+    store.delete("inbox.md")
+    assert store.read("inbox.md") == ""
+    assert "inbox.md" not in {f["path"] for f in store.list_files()}
+
+
 def test_path_escape_blocked(tmp_path, monkeypatch):
     store = setup_env(tmp_path, monkeypatch)
     import pytest

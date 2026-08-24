@@ -21,3 +21,13 @@ uvicorn twin_server.main:app --reload
 ## App
 
 Open `app/` with Gradle (JDK 17): `gradlew assembleDebug`, sideload the APK, set server URL + token in Settings.
+
+## Edit memory without Claude
+
+Markdown on disk is the source of truth. The model can write it; you can too.
+
+- **Phone:** chat header → Memory (or `twin://memory`)
+- **Browser:** `https://<host>/edit` — paste the bearer token, edit, save
+- **Server:** edit files under `$TWIN_DATA_DIR/memory`, then `POST /memory/reindex` so FTS5 catches up
+
+`GET/PUT/DELETE /memory/{path}` and `GET /memory` are the same API both surfaces use.

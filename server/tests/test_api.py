@@ -33,5 +33,21 @@ def test_memory_endpoints(tmp_path, monkeypatch):
     r = c.put("/memory/projects/test.md", json={"content": "# Test\nhello"}, headers=h)
     assert r.status_code == 200
     assert "hello" in c.get("/memory/projects/test.md", headers=h).text
+    listed = c.get("/memory", headers=h).json()
+    paths = {f["path"] for f in listed}
+    assert "projects/test.md" in paths
+    assert "TWIN.md" in paths
     assert c.get("/memory/nope.md", headers=h).status_code == 404
     assert c.put("/memory/evil.txt", json={"content": "x"}, headers=h).status_code == 400
+    assert c.delete("/memory/projects/test.md", headers=h).status_code == 200
+    assert c.get("/memory/projects/test.md", headers=h).status_code == 404
+    assert c.post("/memory/reindex", headers=h).json()["ok"] is True
+
+
+def test_edit_page_is_public_shell(tmp_path, monkeypatch):
+    c = make_client(tmp_path, monkeypatch)
+    r = c.get("/edit")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+    assert "no cloud" in r.text
+    assert c.get("/memory").status_code == 401

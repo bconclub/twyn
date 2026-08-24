@@ -50,6 +50,28 @@ def write(rel: str, content: str) -> None:
     _reindex(rel, content)
 
 
+def delete(rel: str) -> None:
+    p = _safe_path(rel)
+    if not p.is_file():
+        raise FileNotFoundError(rel)
+    p.unlink()
+    db.reindex_file(rel, [])
+
+
+def list_files() -> list[dict]:
+    root = _root()
+    files = []
+    for p in sorted(root.rglob("*.md")):
+        rel = p.relative_to(root).as_posix()
+        st = p.stat()
+        files.append({
+            "path": rel,
+            "bytes": st.st_size,
+            "mtime": datetime.fromtimestamp(st.st_mtime, timezone.utc).isoformat(timespec="seconds"),
+        })
+    return files
+
+
 def _chunks(content: str) -> list[str]:
     parts = [c.strip() for c in re.split(r"\n\s*\n", content)]
     return [c for c in parts if c]

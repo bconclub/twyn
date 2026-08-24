@@ -22,4 +22,15 @@
             android:targetPackage="com.twin.app"
             android:targetClass="com.twin.app.ChatActivity" />
     </shortcut>
+    <shortcut
+        android:shortcutId="memory"
+        android:enabled="true"
+        android:icon="@drawable/ic_twin"
+        android:shortcutShortLabel="@string/shortcut_memory">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="twin://memory"
+            android:targetPackage="com.twin.app"
+            android:targetClass="com.twin.app.ChatActivity" />
+    </shortcut>
 </shortcuts>

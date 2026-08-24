@@ -3,8 +3,10 @@ from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from pathlib import Path
+
 from fastapi import Depends, FastAPI, HTTPException
-from fastapi.responses import PlainTextResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse
 from pydantic import BaseModel
 
 from . import chat, config, db
@@ -55,6 +57,27 @@ def get_messages(limit: int = 50):
     return db.recent_messages(min(limit, 200))
 
 
+EDIT_HTML = Path(__file__).parent / "static" / "edit.html"
+
+
+@app.get("/edit", response_class=HTMLResponse)
+def edit_page():
+    """Local markdown editor. The shell is public; reads/writes still need the token."""
+    if not EDIT_HTML.is_file():
+        raise HTTPException(404, "editor missing")
+    return EDIT_HTML.read_text(encoding="utf-8")
+
+
+@app.get("/memory", dependencies=[Depends(require_token)])
+def list_memory():
+    return store.list_files()
+
+
+@app.post("/memory/reindex", dependencies=[Depends(require_token)])
+def reindex_memory():
+    return {"ok": True, "files": store.reindex_all()}
+
+
 @app.get("/memory/{path:path}", response_class=PlainTextResponse, dependencies=[Depends(require_token)])
 def get_memory(path: str):
     try:
@@ -76,6 +99,17 @@ def put_memory(path: str, body: MemoryPut):
         raise HTTPException(400, "only .md files")
     try:
         store.write(path, body.content)
+    except ValueError:
+        raise HTTPException(400, "bad path")
+    return {"ok": True}
+
+
+@app.delete("/memory/{path:path}", dependencies=[Depends(require_token)])
+def delete_memory(path: str):
+    try:
+        store.delete(path)
+    except FileNotFoundError:
+        raise HTTPException(404, "not found")
     except ValueError:
         raise HTTPException(400, "bad path")
     return {"ok": True}

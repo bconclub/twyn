@@ -3,4 +3,5 @@
     <string name="app_name">TWYN</string>
     <string name="shortcut_talk">Talk</string>
     <string name="shortcut_type">Type</string>
+    <string name="shortcut_memory">Memory</string>
 </resources>

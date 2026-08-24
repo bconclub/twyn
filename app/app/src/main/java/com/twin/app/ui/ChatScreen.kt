@@ -31,6 +31,7 @@ private val Accent = Color(0xFF7C6CFF)
 @Composable
 fun ChatScreen(
     startVoice: Boolean,
+    startMemory: Boolean = false,
     requestMic: () -> Unit,
     onClose: () -> Unit,
     vm: ChatViewModel = viewModel(),
@@ -42,6 +43,7 @@ fun ChatScreen(
     var input by remember { mutableStateOf("") }
     var listening by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(!prefs.configured) }
+    var showMemory by remember { mutableStateOf(false) }
     val speech = remember { Speech(context) }
     val focus = remember { FocusRequester() }
     val listState = rememberLazyListState()
@@ -60,10 +62,14 @@ fun ChatScreen(
         )
     }
 
+    LaunchedEffect(startMemory) {
+        if (startMemory && prefs.configured) showMemory = true
+    }
+
     // key on showSettings: while the settings dialog is up the chat input (and its
     // focusRequester) is not composed, so requesting focus then would crash
-    LaunchedEffect(showSettings) {
-        if (showSettings) return@LaunchedEffect
+    LaunchedEffect(showSettings, showMemory) {
+        if (showSettings || showMemory) return@LaunchedEffect
         if (startVoice && prefs.configured) startListening()
         else runCatching { focus.requestFocus() }
     }
@@ -73,7 +79,15 @@ fun ChatScreen(
     DisposableEffect(Unit) { onDispose { speech.stop() } }
 
     if (showSettings) {
-        SettingsDialog(onDone = { showSettings = false })
+        SettingsDialog(onDone = {
+            showSettings = false
+            if (startMemory) showMemory = true
+        })
+        return
+    }
+
+    if (showMemory) {
+        MemoryScreen(onClose = { showMemory = false })
         return
     }
 
@@ -99,6 +113,7 @@ fun ChatScreen(
             ) {
                 Text("TWYN", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
+                TextButton(onClick = { showMemory = true }) { Text("Memory", color = Color.Gray, fontSize = 14.sp) }
                 TextButton(onClick = { showSettings = true }) { Text("⋯", color = Color.Gray, fontSize = 20.sp) }
             }
 

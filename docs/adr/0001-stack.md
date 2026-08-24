@@ -14,7 +14,7 @@
 
 5. **Retrieval v0: FTS5, no embeddings.** Single-user corpus is small; keyword search + always-loaded persona + recency ships in hours. Add sqlite-vec + Voyage embeddings in v0.5 when corpus outgrows it.
 
-6. **Memory: hybrid.** Markdown files are source of truth (inspectable, editable, git-backable): TWIN.md (persona, always in system prompt), facts.md (append-only, distilled nightly), projects/, daily/, inbox.md. SQLite holds transcript + FTS5 index re-synced on write. Writes happen through Claude tool-use: `remember_fact`, `update_persona_section`, `write_project_note`, `search_memory`.
+6. **Memory: hybrid.** Markdown files are source of truth (inspectable, editable, git-backable): TWIN.md (persona, always in system prompt), facts.md (append-only, distilled nightly), projects/, daily/, inbox.md. SQLite holds transcript + FTS5 index re-synced on write. Claude tool-use (`remember_fact`, `update_persona_section`, `write_project_note`, `search_memory`) is one writer, not the only one. Humans edit the same files locally: Android Memory screen, browser `/edit`, or vim on disk plus `POST /memory/reindex`. Local edits never call the model.
 
 ## Revisit when
 - Multi-user (Phase 4): Postgres, real auth, per-tenant encryption

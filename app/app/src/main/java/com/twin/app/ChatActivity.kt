@@ -19,7 +19,9 @@ class ChatActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val voiceMode = intent?.data?.getQueryParameter("voice") == "1"
+        val dest = intent?.data
+        val voiceMode = dest?.getQueryParameter("voice") == "1"
+        val memoryMode = dest?.host == "memory"
         micGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) ==
             PackageManager.PERMISSION_GRANTED
         if (voiceMode && !micGranted) micPermission.launch(Manifest.permission.RECORD_AUDIO)
@@ -27,6 +29,7 @@ class ChatActivity : ComponentActivity() {
         setContent {
             ChatScreen(
                 startVoice = voiceMode,
+                startMemory = memoryMode,
                 requestMic = { micPermission.launch(Manifest.permission.RECORD_AUDIO) },
                 onClose = { finish() },
             )
