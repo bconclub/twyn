@@ -11,6 +11,17 @@
 - [x] Widget + quick tile built (verify on device)
 - [ ] Founder 7-day daily-use streak
 
+## Phase 0.5 — Call Taker (M2-3) `NEXT` · see [ADR 0002](adr/0002-call-taker.md)
+The first chore TWYN removes: inbound calls. Twin screens, declines with context, and
+keeps track of who to call back — in your voice, with your judgment.
+- [ ] Plane A: `CallScreeningService` spam label/block (number + STIR/SHAKEN + reputation)
+- [ ] Plane A: "Let Twin handle it" decline → context-aware SMS via server (persona+memory)
+- [ ] Plane A: spam "mock mode" sarcastic auto-reply
+- [ ] Plane A: caller + callback logged to memory; surfaced in morning brief
+- [ ] Plane B: Twin phone number (Twilio/Plivo) + conditional call-forwarding
+- [ ] Plane B: voice loop (STT → Claude → TTS) answers + writes call summary/callback task
+- [ ] Metric: 90% of spam auto-handled; every real caller logged; founder phone-triage time down
+
 ## Phase 1 — Exocortex (M3-6)
 - [ ] Gmail + Calendar ingestion
 - [ ] Nightly summarizer + morning brief (FCM)
