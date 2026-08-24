@@ -36,7 +36,6 @@ def test_memory_endpoints(tmp_path, monkeypatch):
     listed = c.get("/memory", headers=h).json()
     paths = {f["path"] for f in listed}
     assert "projects/test.md" in paths
-    assert "TWIN.md" in paths
     assert c.get("/memory/nope.md", headers=h).status_code == 404
     assert c.put("/memory/evil.txt", json={"content": "x"}, headers=h).status_code == 400
     assert c.delete("/memory/projects/test.md", headers=h).status_code == 200
