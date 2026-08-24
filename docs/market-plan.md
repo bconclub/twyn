@@ -39,6 +39,38 @@ The twin exists. Phone-native, widget-fast, remembers everything.
 
 ---
 
+## Phase 0.5 — Call Taker (Months 2-3)
+
+The wedge utility. Before the twin runs your digital life, it removes one universal chore:
+inbound calls. Instead of "answer / decline," you get "let Twin take it." Twin screens
+spam, declines with a context-aware reply, keeps track of who wanted what, and tells you
+who to call back — for spam, it runs a sarcastic mock mode. See [ADR 0002](adr/0002-call-taker.md).
+
+**Goals**
+- On-device call control: spam screening + "Let Twin handle it" decline-with-context (SMS)
+- A Twin phone number Twin can actually answer and converse on (forwarded/unanswered calls)
+- Every caller and callback captured into the twin's memory automatically
+
+**Platform reality (why it's shaped this way):** a third-party Android app cannot answer a
+live cellular call or access its audio (system-only since Android 10). So Plane A screens
+and declines on-device, and Plane B routes calls to a Twin VoIP number the server fully
+controls (STT → Claude → TTS). Same experience, within the rules.
+
+**Metrics**
+- 90%+ of spam auto-handled without the founder's attention
+- 100% of real callers logged with intent + callback status
+- Founder's daily phone-triage time measurably down
+
+**Differentiation:** Google Call Screen is privileged and generic; Truecaller only IDs
+spam; AI receptionists (Rosie, Numa) are business-only. TWYN answers as *you*, for your
+*personal* life, using your memory and judgment — and later, your cloned voice.
+
+**Risks:** OEM battery optimization kills screening/push (onboarding whitelist step);
+call-recording/AI-disclosure law varies (twin discloses itself, region-configurable).
+**Cost:** ~$5-20/mo added (number + STT/TTS usage). No hires.
+
+---
+
 ## Phase 1 — Exocortex (Months 3-6)
 
 The twin stops waiting to be asked. It ingests the founder's digital life and becomes proactive.
