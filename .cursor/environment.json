@@ -1,0 +1,14 @@
+{
+  "name": "TWYN",
+  "install": "bash .cursor/install.sh",
+  "terminals": [
+    {
+      "name": "twin-server",
+      "command": "cd server && . .venv/bin/activate && TWIN_TOKEN=\"${TWIN_TOKEN:-dev-token}\" TWIN_DATA_DIR=\"${TWIN_DATA_DIR:-$HOME/twin-data}\" uvicorn twin_server.main:app --host 127.0.0.1 --port 8000 --reload",
+      "description": "FastAPI brain (server/) on http://127.0.0.1:8000 with auto-reload. Set ANTHROPIC_API_KEY to enable the /chat Claude loop; the token defaults to 'dev-token'."
+    }
+  ],
+  "ports": [
+    { "name": "twin-server", "port": 8000 }
+  ]
+}
