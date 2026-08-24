@@ -18,8 +18,9 @@ keeps track of who to call back — in your voice, with your judgment.
 - [ ] Plane A: "Let Twin handle it" decline → context-aware SMS via server (persona+memory)
 - [ ] Plane A: spam "mock mode" sarcastic auto-reply
 - [ ] Plane A: caller + callback logged to memory; surfaced in morning brief
-- [ ] Plane B: Twin phone number (Twilio/Plivo) + conditional call-forwarding
-- [ ] Plane B: voice loop (STT → Claude → TTS) answers + writes call summary/callback task
+- [ ] Plane B (CORE): Twin number on a SIP trunk/provider + conditional call-forwarding
+- [ ] Plane B: contacts sync → Twin knows who's calling (name/relationship/notes)
+- [ ] Plane B: voice loop (STT → Claude+contacts → TTS) answers + writes call summary/callback
 - [ ] Metric: 90% of spam auto-handled; every real caller logged; founder phone-triage time down
 
 ## Phase 1 — Exocortex (M3-6)

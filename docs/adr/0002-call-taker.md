@@ -1,6 +1,14 @@
 # ADR 0002 — Call Taker (TWYN's first "chore" product)
 
-**Status:** Proposed · **Date:** 2026-08-24
+**Status:** Accepted (direction) — telephony provider TBD · **Date:** 2026-08-24
+
+> **Decision (2026-08-24):** Since a third-party app can't answer the live cellular call,
+> the core mechanism is **Plane B — a dedicated Twin number on a SIP trunk / telephony
+> provider.** The user diverts (conditionally forwards) their line to the Twin number;
+> Twin answers with full context — **contacts, memory, everything** — captures the call,
+> and queues a callback. Plane A (on-device screening) becomes the complementary layer
+> that kills spam and triggers the "send it to Twin" divert. Provider still to be picked
+> (see "Provider & integration" below).
 
 ## Context
 
@@ -58,15 +66,36 @@ inside the rules.
 - Reuses existing pieces: `app/voice/Speech.kt`, `TwinApi.kt`, and the server memory
   tools (a new `log_caller` / `queue_callback` alongside `remember_fact`).
 
-### Plane B — Twin Number (the real "Twin takes the call")
-- Provision a dedicated number via a telephony provider (Twilio / Plivo / Telnyx).
-- User sets conditional call-forwarding to it, or hands it out directly.
-- Provider voice webhook drives the server media loop: **STT → Claude (persona+memory) →
-  TTS**. Twin converses, captures intent, and writes a structured call summary + callback
-  task into memory. SMS path uses the provider's messaging API.
+### Plane B — Twin Number (CHOSEN core mechanism)
+- Provision a dedicated DID on a SIP trunk / telephony provider.
+- User sets **conditional call-forwarding** (forward-when-busy / -unanswered / -declined)
+  from their real line to the Twin number, or hands the number out directly.
+- Inbound call → provider event → server media loop: **STT → Claude (persona + memory +
+  contacts) → TTS**. Twin converses **as the user, knowing who's calling**, captures
+  intent, and writes a structured call summary + callback task into memory. SMS follow-ups
+  use the provider's messaging API.
 - Inbound VoIP surfaced in-app later via FCM high-priority **data** messages + Jetpack
   Core-Telecom `CallsManager` (2026 recipe); requires OEM battery-optimization
   whitelisting UX.
+
+#### Provider & integration (to decide)
+Two integration styles, provider-agnostic on our side via a thin telephony adapter:
+1. **Managed Voice API** (Twilio Programmable Voice, Telnyx Call Control, Plivo): the
+   provider hosts the media and streams call audio to our server over a WebSocket; we run
+   STT/LLM/TTS. **Minimal infra, no PBX — recommended for v0.**
+2. **Raw SIP trunk + our media server** (Asterisk / FreeSWITCH bridging RTP to the AI
+   loop): more control and cheaper per-minute at scale, but we must run and secure a PBX.
+   Defer to when volume justifies it.
+
+Most DID providers (Telnyx, Twilio, Plivo, Voxbone/Bandwidth, VoIP.ms) support both, so
+we keep the server behind a `TelephonyProvider` interface and swap the adapter. **Open:
+confirm the provider ("Wobbis"?) and pick style 1 vs 2.**
+
+#### Contacts (so Twin knows who's calling)
+- App syncs the user's contacts to the server (opt-in, `READ_CONTACTS`), stored as a
+  `contacts` memory area (name ↔ number ↔ relationship/notes).
+- On an inbound call, the server matches the caller number → contact → related memory, and
+  greets/behaves accordingly (known contact vs unknown vs flagged spam).
 
 ## Consequences
 
